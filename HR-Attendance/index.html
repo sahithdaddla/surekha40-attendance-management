@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2193b0, #6dd5ed);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .current-date {
+            font-size: 1rem;
+            margin-top: 5px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2193b0;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab.active {
+            background: #2193b0;
+            color: white;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .export-button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .export-button:hover {
+            background: #388E3C;
+        }
+
+        .clear-button {
+            padding: 10px 20px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clear-button:hover {
+            background: #d32f2f;
+        }
+
+        .search-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .search-bar button {
+            padding: 10px 20px;
+            background: #2193b0;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .search-results-message {
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        .attendance-table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .attendance-table th,
+        .attendance-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .attendance-table th {
+            background: #2193b0;
+            color: white;
+            font-weight: bold;
+        }
+
+        .attendance-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+
+        .status.in {
+            background: #e8f5e9;
+            color: #4CAF50;
+        }
+
+        .status.out {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .attendance-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .full-day {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .half-day {
+            background: #fff8e1;
+            color: #ef6c00;
+        }
+
+        .absent {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .attendance-time {
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 0.9em;
+        }
+
+        .on-time {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .late {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin: 20px 0;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .pagination button.active {
+            background: #2193b0;
+            color: white;
+            border-color: #2193b0;
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .button-container {
+                flex-direction: column;
+            }
+
+            .search-bar {
+                flex-direction: column;
+            }
+
+            .attendance-table {
+                font-size: 0.8rem;
+            }
+
+            .attendance-table th,
+            .attendance-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Admin Dashboard</h1>
+            <div class="current-date" id="currentDate"></div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('today')">Today</div>
+            <div class="tab" onclick="switchTab('week')">This Week</div>
+            <div class="tab" onclick="switchTab('month')">This Month</div>
+            <div class="tab" onclick="switchTab('all')">All Records</div>
+        </div>
+
+        <div class="search-container">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search by employee ID...">
+                <button onclick="searchEmployees()">Search</button>
+            </div>
+            <div id="searchMessage" class="search-results-message"></div>
+        </div>
+
+        <div class="button-container">
+            <button class="export-button" onclick="exportData()">Export to CSV</button>
+            <button class="clear-button" onclick="clearRecords()">Clear Records</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="presentCount">0</div>
+                <div>Present Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="halfDayCount">0</div>
+                <div>Half Day Present</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="absentCount">0</div>
+                <div>Absent</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalEmployees">0</div>
+                <div>Total Employees</div>
+            </div>
+        </div>
+
+        <div class="attendance-table-container">
+            <table class="attendance-table" id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Date</th>
+                        <th>Punch In</th>
+                        <th>Punch Out</th>
+                        <th>Hours</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceTableBody"></tbody>
+            </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3001/api';
+        let currentTab = 'today';
+        let currentPage = 1;
+        const recordsPerPage = 12;
+        let currentEmployeeId = '';
+
+        async function fetchAttendanceRecords() {
+            const params = new URLSearchParams({
+                tab: currentTab,
+                page: currentPage,
+                limit: recordsPerPage
+            });
+            if (currentEmployeeId) {
+                params.append('employeeId', currentEmployeeId);
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/attendance?${params}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`Server error: ${response.status} ${text.startsWith('<!DOCTYPE') ? 'HTML response received' : text}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching attendance records:', error);
+                document.getElementById('searchMessage').textContent = 'Failed to fetch records. Please check server connection.';
+                return { records: [], totalRecords: 0, totalPages: 0 };
+            }
+        }
+
+        async function fetchStats() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/stats`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`Server error: ${response.status} ${text.startsWith('<!DOCTYPE') ? 'HTML response received' : text}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+                return { present: 0, halfDay: 0, absent: 0, totalEmployees: 0 };
+            }
+        }
+
+        function formatTime(dateString) {
+            if (!dateString) return 'Not punched out';
+            return new Date(dateString).toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: true 
+            });
+        }
+
+        function formatDuration(hoursWorked) {
+            if (!hoursWorked) return 'N/A';
+            const hours = Math.floor(hoursWorked);
+            const minutes = Math.floor((hoursWorked - hours) * 60);
+            let result = '';
+            if (hours > 0) result += `${hours} hour${hours !== 1 ? 's' : ''}`;
+            if (minutes > 0) result += `${hours > 0 ? ', ' : ''}${minutes} minute${minutes !== 1 ? 's' : ''}`;
+            return result || '0 minutes';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        function wasLate(punchInTime) {
+            const date = new Date(punchInTime);
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            return hours > 9 || (hours === 9 && minutes > 0);
+        }
+
+        function displayRecords(data) {
+            const tableBody = document.getElementById('attendanceTableBody');
+            tableBody.innerHTML = '';
+
+            if (data.records.length === 0) {
+                tableBody.innerHTML = '<tr><td class="no-results" colspan="6">No records found</td></tr>';
+                return;
+            }
+
+            data.records.forEach(entry => {
+                const row = document.createElement('tr');
+
+                const punchInDate = formatDate(entry.punch_in);
+                const punchInTime = formatTime(entry.punch_in);
+                const timeStatus = wasLate(entry.punch_in) ? 
+                    '<span class="attendance-time late">Late</span>' : 
+                    '<span class="attendance-time on-time">On Time</span>';
+
+                let punchOutInfo = 'Not recorded';
+                let hoursInfo = 'N/A';
+                let statusInfo = '<span class="status in">Currently In</span>';
+
+                if (entry.punch_out && entry.hours_worked) {
+                    punchOutInfo = formatTime(entry.punch_out);
+                    hoursInfo = formatDuration(entry.hours_worked);
+                    statusInfo = `<span class="attendance-status ${entry.attendance_status === 'Present' ? 'full-day' : entry.attendance_status === 'Half Day Present' ? 'half-day' : 'absent'}">${entry.attendance_status}</span>`;
+                }
+
+                row.innerHTML = `
+                    <td>${entry.employee_id}</td>
+                    <td>${punchInDate}</td>
+                    <td>${punchInTime} ${timeStatus}</td>
+                    <td>${punchOutInfo}</td>
+                    <td>${hoursInfo}</td>
+                    <td>${statusInfo}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function setupPagination(totalPages) {
+            const paginationElement = document.getElementById('pagination');
+            paginationElement.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const prevButton = document.createElement('button');
+            prevButton.innerHTML = '«';
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updateDashboard();
+                }
+            });
+            paginationElement.appendChild(prevButton);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.classList.toggle('active', i === currentPage);
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    updateDashboard();
+                });
+                paginationElement.appendChild(button);
+            }
+
+            const nextButton = document.createElement('button');
+            nextButton.innerHTML = '»';
+            nextButton.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updateDashboard();
+                }
+            });
+            paginationElement.appendChild(nextButton);
+        }
+
+        async function updateStats() {
+            const stats = await fetchStats();
+            document.getElementById('presentCount').textContent = stats.present;
+            document.getElementById('halfDayCount').textContent = stats.halfDay;
+            document.getElementById('absentCount').textContent = stats.absent;
+            document.getElementById('totalEmployees').textContent = stats.totalEmployees;
+        }
+
+        async function searchEmployees() {
+            const query = document.getElementById('searchInput').value.trim().toUpperCase();
+            const searchMessage = document.getElementById('searchMessage');
+
+            if (!query) {
+                currentEmployeeId = '';
+                searchMessage.textContent = '';
+                currentTab = 'today';
+                updateDashboard();
+                return;
+            }
+
+            currentEmployeeId = query;
+            currentTab = 'search';
+            currentPage = 1;
+            const data = await fetchAttendanceRecords();
+            searchMessage.textContent = data.records.length > 0 ? 
+                `Found ${data.totalRecords} matching records` : 
+                'No matching records found';
+            displayRecords(data);
+            setupPagination(data.totalPages);
+            updateStats();
+        }
+
+        async function exportData() {
+            const params = new URLSearchParams({ tab: currentTab });
+            if (currentEmployeeId) {
+                params.append('employeeId', currentEmployeeId);
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/export?${params}`);
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`Server error: ${response.status} ${text.startsWith('<!DOCTYPE') ? 'HTML response received' : text}`);
+                }
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `attendance_${currentTab}_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                document.getElementById('searchMessage').textContent = 'Failed to export data. Please check server connection.';
+            }
+        }
+
+        async function clearRecords() {
+            if (confirm('Are you sure you want to clear all attendance records? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/attendance`, { 
+                        method: 'DELETE',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (!response.ok) {
+                        const text = await response.text();
+                        throw new Error(`Server error: ${response.status} ${text.startsWith('<!DOCTYPE') ? 'HTML response received' : text}`);
+                    }
+                    const data = await response.json();
+                    alert(data.message);
+                    document.getElementById('searchInput').value = '';
+                    document.getElementById('searchMessage').textContent = '';
+                    currentEmployeeId = '';
+                    updateDashboard();
+                } catch (error) {
+                    console.error('Error clearing records:', error);
+                    document.getElementById('searchMessage').textContent = 'Failed to clear records. Please check server connection.';
+                }
+            }
+        }
+
+        async function switchTab(tab) {
+            currentTab = tab;
+            currentEmployeeId = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchMessage').textContent = '';
+            document.querySelectorAll('.tab').forEach(tabElement => {
+                tabElement.classList.toggle('active', tabElement.textContent.toLowerCase().includes(tab));
+            });
+            currentPage = 1;
+            updateDashboard();
+        }
+
+        async function updateDashboard() {
+            const data = await fetchAttendanceRecords();
+            displayRecords(data);
+            setupPagination(data.totalPages);
+            updateStats();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('currentDate').textContent = formatDate(new Date());
+            updateDashboard();
+            document.getElementById('searchInput').addEventListener('input', searchEmployees);
+        });
+    </script>
+</body>
+</html>
