@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: attendance40-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: attendance_db
+    ports:
+      - "5458:5432"
+    volumes:
+      - pgdata_att40:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - attendance-net
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: attendance40-backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: attendance_db
+      DB_USER: postgres
+      DB_PASSWORD: admin123
+      PORT: 3027
+    ports:
+      - "3027:3027"
+    networks:
+      - attendance-net
+
+  employee-attendance:
+    build:
+      context: ./Employee-Attendance
+      dockerfile: Dockerfile
+    container_name: attendance40-ui-employee
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8164:80"
+    networks:
+      - attendance-net
+
+  hr-attendance:
+    build:
+      context: ./HR-Attendance
+      dockerfile: Dockerfile
+    container_name: attendance40-ui-hr
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8165:80"
+    networks:
+      - attendance-net
+
+networks:
+  attendance-net:
+
+volumes:
+  pgdata_att40:
+
