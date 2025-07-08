@@ -10,7 +10,7 @@ RUN npm ci --production
 # Copy source
 COPY . .
 
-EXPOSE 3027
+EXPOSE 3603
 ENV NODE_ENV=production
 
 CMD ["node", "server.js"]
