@@ -27,8 +27,7 @@ app.use((req, res, next) => {
 const validateEmployeeId = (id) => {
     if (!id || id.includes(' ') || id.length !== 7) return false;
     const formatRegex = /^ATS0\d{3}$/;
-    if (!formatRegex.test(id) || id.slice(-3) === '000') return false;
-    return true;
+    return formatRegex.test(id) && id.slice(-3) !== '000';
 };
 
 // Punch In
@@ -76,25 +75,21 @@ app.post('/api/punch-out', async (req, res) => {
 
     try {
         const today = new Date().toISOString().split('T')[0];
-        const checkQuery = `
+        const checkResult = await pool.query(`
             SELECT * FROM attendance 
             WHERE employee_id = $1 
             AND DATE(punch_in) = $2 
             AND status = 'in'
-        `;
-        const checkResult = await pool.query(checkQuery, [employeeId, today]);
+        `, [employeeId, today]);
 
         if (checkResult.rows.length === 0) {
             return res.status(400).json({ error: 'No active punch-in found for today' });
         }
 
-        const hoursWorked = await pool.query(`
-            SELECT EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - punch_in)) / 3600 AS hours
-            FROM attendance
-            WHERE employee_id = $1 AND DATE(punch_in) = $2
-        `, [employeeId, today]);
+        const punchInTime = new Date(checkResult.rows[0].punch_in);
+        const now = new Date();
+        const hours = parseFloat(((now - punchInTime) / 3600000).toFixed(2));
 
-        const hours = parseFloat(hoursWorked.rows[0].hours.toFixed(2));
         let attendanceStatus;
         if (hours >= 8) attendanceStatus = 'Present';
         else if (hours >= 4) attendanceStatus = 'Half Day Present';
@@ -106,17 +101,17 @@ app.post('/api/punch-out', async (req, res) => {
                 status = 'out',
                 hours_worked = $1,
                 attendance_status = $2
-            WHERE employee_id = $3 
-            AND DATE(punch_in) = $4
+            WHERE id = $3
             RETURNING *
         `;
-        const result = await pool.query(updateQuery, [hours, attendanceStatus, employeeId, today]);
-        res.json({ 
+        const result = await pool.query(updateQuery, [hours, attendanceStatus, checkResult.rows[0].id]);
+
+        res.json({
             message: 'Successfully punched out',
             record: result.rows[0]
         });
     } catch (error) {
-        console.error('Error punching out:', error);
+        console.error('Error punching out:', error.stack || error.message || error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -150,10 +145,10 @@ app.get('/api/attendance', async (req, res) => {
 
     try {
         const result = await pool.query(
-            ${query}${whereClause} ORDER BY punch_in DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2},
+            `${query}${whereClause} ORDER BY punch_in DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
             [...params, limit, offset]
         );
-        const countResult = await pool.query(${countQuery}${whereClause}, params);
+        const countResult = await pool.query(`${countQuery}${whereClause}`, params);
         res.json({
             records: result.rows,
             totalRecords: parseInt(countResult.rows[0].count),
@@ -247,7 +242,7 @@ app.get('/api/export', async (req, res) => {
     }
 
     try {
-        const result = await pool.query(${query}${whereClause} ORDER BY punch_in DESC, params);
+        const result = await pool.query(`${query}${whereClause} ORDER BY punch_in DESC`, params);
         let csvContent = 'Employee ID,Date,Punch In,Punch Out,Hours Worked,Attendance Status\n';
         
         result.rows.forEach(row => {
@@ -255,11 +250,11 @@ app.get('/api/export', async (req, res) => {
             const punchOut = row.punch_out ? new Date(row.punch_out).toLocaleString('en-US') : 'Not punched out';
             const hours = row.hours_worked ? formatDuration(row.hours_worked) : 'N/A';
             const status = row.attendance_status || 'In Progress';
-            csvContent += ${row.employee_id},"${punchIn.split(',')[0]}","${punchIn.split(',')[1]?.trim() || punchIn}","${punchOut.split(',')[1]?.trim() || punchOut}",${hours},${status}\n;
+            csvContent += `${row.employee_id},"${punchIn.split(',')[0]}","${punchIn.split(',')[1]?.trim() || punchIn}","${punchOut.split(',')[1]?.trim() || punchOut}",${hours},${status}\n`;
         });
 
         res.header('Content-Type', 'text/csv');
-        res.attachment(attendance_${tab}_${new Date().toISOString().split('T')[0]}.csv);
+        res.attachment(`attendance_${tab}_${new Date().toISOString().split('T')[0]}.csv`);
         res.send(csvContent);
     } catch (error) {
         console.error('Error exporting data:', error);
@@ -271,12 +266,13 @@ app.get('/api/export', async (req, res) => {
         const hours = Math.floor(hoursWorked);
         const minutes = Math.floor((hoursWorked - hours) * 60);
         let result = '';
-        if (hours > 0) result += ${hours} hour${hours !== 1 ? 's' : ''};
-        if (minutes > 0) result += ${hours > 0 ? ', ' : ''}${minutes} minute${minutes !== 1 ? 's' : ''};
+        if (hours > 0) result += `${hours} hour${hours !== 1 ? 's' : ''}`;
+        if (minutes > 0) result += `${hours > 0 ? ', ' : ''}${minutes} minute${minutes !== 1 ? 's' : ''}`;
         return result || '0 minutes';
     }
 });
 
 app.listen(port, () => {
-    console.log(Server running at http://56.228.41.185:${port});
+    console.log(`Server running at http://56.228.41.185:${port}`);
 });
+
