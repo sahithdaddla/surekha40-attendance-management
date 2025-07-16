@@ -1,17 +1,12 @@
-# -------- Backend/Dockerfile --------
-FROM node:20-alpine
+FROM node:18
 
 WORKDIR /app
 
-# Install production deps
 COPY package*.json ./
-RUN npm ci --production
+RUN npm install
 
-# Copy source
 COPY . .
 
 EXPOSE 3603
-ENV NODE_ENV=production
 
 CMD ["node", "server.js"]
-
