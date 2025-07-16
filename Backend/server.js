@@ -261,10 +261,10 @@ app.get('/api/export', async (req, res) => {
         res.header('Content-Type', 'text/csv');
         res.attachment(`attendance_${tab}_${new Date().toISOString().split('T')[0]}.csv`);
         res.send(csvContent);
-    } catch (error) {
-        console.error('Error exporting data:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
+    } catch (err) {
+  console.error('Punch-out error:', err); // Full stack trace
+  res.status(500).json({ error: err.message }); // Show actual error for debugging
+}
 
     function formatDuration(hoursWorked) {
         if (!hoursWorked) return 'N/A';
