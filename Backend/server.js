@@ -27,8 +27,7 @@ app.use((req, res, next) => {
 const validateEmployeeId = (id) => {
     if (!id || id.includes(' ') || id.length !== 7) return false;
     const formatRegex = /^ATS0\d{3}$/;
-    if (!formatRegex.test(id) || id.slice(-3) === '000') return false;
-    return true;
+    return formatRegex.test(id) && id.slice(-3) !== '000';
 };
 
 // Punch In
@@ -76,25 +75,21 @@ app.post('/api/punch-out', async (req, res) => {
 
     try {
         const today = new Date().toISOString().split('T')[0];
-        const checkQuery = `
+        const checkResult = await pool.query(`
             SELECT * FROM attendance 
             WHERE employee_id = $1 
             AND DATE(punch_in) = $2 
             AND status = 'in'
-        `;
-        const checkResult = await pool.query(checkQuery, [employeeId, today]);
+        `, [employeeId, today]);
 
         if (checkResult.rows.length === 0) {
             return res.status(400).json({ error: 'No active punch-in found for today' });
         }
 
-        const hoursWorked = await pool.query(`
-            SELECT EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - punch_in)) / 3600 AS hours
-            FROM attendance
-            WHERE employee_id = $1 AND DATE(punch_in) = $2
-        `, [employeeId, today]);
+        const punchInTime = new Date(checkResult.rows[0].punch_in);
+        const now = new Date();
+        const hours = parseFloat(((now - punchInTime) / 3600000).toFixed(2));
 
-        const hours = parseFloat(hoursWorked.rows[0].hours.toFixed(2));
         let attendanceStatus;
         if (hours >= 8) attendanceStatus = 'Present';
         else if (hours >= 4) attendanceStatus = 'Half Day Present';
@@ -106,17 +101,17 @@ app.post('/api/punch-out', async (req, res) => {
                 status = 'out',
                 hours_worked = $1,
                 attendance_status = $2
-            WHERE employee_id = $3 
-            AND DATE(punch_in) = $4
+            WHERE id = $3
             RETURNING *
         `;
-        const result = await pool.query(updateQuery, [hours, attendanceStatus, employeeId, today]);
-        res.json({ 
+        const result = await pool.query(updateQuery, [hours, attendanceStatus, checkResult.rows[0].id]);
+
+        res.json({
             message: 'Successfully punched out',
             record: result.rows[0]
         });
     } catch (error) {
-        console.error('Error punching out:', error);
+        console.error('Error punching out:', error.stack || error.message || error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
