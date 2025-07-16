@@ -150,10 +150,10 @@ app.get('/api/attendance', async (req, res) => {
 
     try {
         const result = await pool.query(
-            `${query}${whereClause} ORDER BY punch_in DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+            ${query}${whereClause} ORDER BY punch_in DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2},
             [...params, limit, offset]
         );
-        const countResult = await pool.query(`${countQuery}${whereClause}`, params);
+        const countResult = await pool.query(${countQuery}${whereClause}, params);
         res.json({
             records: result.rows,
             totalRecords: parseInt(countResult.rows[0].count),
@@ -247,7 +247,7 @@ app.get('/api/export', async (req, res) => {
     }
 
     try {
-        const result = await pool.query(`${query}${whereClause} ORDER BY punch_in DESC`, params);
+        const result = await pool.query(${query}${whereClause} ORDER BY punch_in DESC, params);
         let csvContent = 'Employee ID,Date,Punch In,Punch Out,Hours Worked,Attendance Status\n';
         
         result.rows.forEach(row => {
@@ -255,28 +255,28 @@ app.get('/api/export', async (req, res) => {
             const punchOut = row.punch_out ? new Date(row.punch_out).toLocaleString('en-US') : 'Not punched out';
             const hours = row.hours_worked ? formatDuration(row.hours_worked) : 'N/A';
             const status = row.attendance_status || 'In Progress';
-            csvContent += `${row.employee_id},"${punchIn.split(',')[0]}","${punchIn.split(',')[1]?.trim() || punchIn}","${punchOut.split(',')[1]?.trim() || punchOut}",${hours},${status}\n`;
+            csvContent += ${row.employee_id},"${punchIn.split(',')[0]}","${punchIn.split(',')[1]?.trim() || punchIn}","${punchOut.split(',')[1]?.trim() || punchOut}",${hours},${status}\n;
         });
 
         res.header('Content-Type', 'text/csv');
-        res.attachment(`attendance_${tab}_${new Date().toISOString().split('T')[0]}.csv`);
+        res.attachment(attendance_${tab}_${new Date().toISOString().split('T')[0]}.csv);
         res.send(csvContent);
-    } catch (err) {
-  console.error('Punch-out error:', err); // Full stack trace
-  res.status(500).json({ error: err.message }); // Show actual error for debugging
-}
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 
     function formatDuration(hoursWorked) {
         if (!hoursWorked) return 'N/A';
         const hours = Math.floor(hoursWorked);
         const minutes = Math.floor((hoursWorked - hours) * 60);
         let result = '';
-        if (hours > 0) result += `${hours} hour${hours !== 1 ? 's' : ''}`;
-        if (minutes > 0) result += `${hours > 0 ? ', ' : ''}${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        if (hours > 0) result += ${hours} hour${hours !== 1 ? 's' : ''};
+        if (minutes > 0) result += ${hours > 0 ? ', ' : ''}${minutes} minute${minutes !== 1 ? 's' : ''};
         return result || '0 minutes';
     }
 });
 
 app.listen(port, () => {
-    console.log(`Server running at http://56.228.41.185:${port}`);
+    console.log(Server running at http://56.228.41.185:${port});
 });
